@@ -1,0 +1,71 @@
+# Assume the address of B[] is stored at $sp+4
+#debug
+#.data
+	# suppose the first element in the array denotes the size of the array
+#	list:	.word	14, 14, 12, 13, 5, 9, 11, 3, 6, 7, 10, 2, 4, 8, 1 
+	#list:	.word	3, 3, 2, 1
+#.text
+
+# TODO: Insert code to set up parameters and invoke the function
+
+# Stack: old fp
+
+#debug
+#la $a0, list	# tmp
+#sw $a0, 4($sp) #tmp
+
+lw $a0, 4($sp)	# load the address of array in $a0
+
+sw $fp, 0($sp)	# push the current frame pointer to stack
+addiu $sp, $sp, -4
+sw $a0, 0($sp)	# push the parameter of the array address to stack
+addiu $sp, $sp, -4
+	# Stack: parameter (the address of array), old fp 
+	
+	
+jal array_sum	# call function sum
+# After returning from the function call, the return value should
+# be kept in $a0.
+
+li $v0, 1	# print out the result
+syscall 
+	
+li $v0, 10	# terminate program
+syscall 
+
+# TODO: Insert code for the function definition (You can use any 
+# approach to compute the sum of the elements)
+
+
+array_sum:
+	move $fp, $sp	# move frame pointer to the current function, $fp = $sp
+	
+	sw $ra, 0($sp)	# push the return address to stack
+	addiu $sp, $sp, -4
+	# Stack: return address, parameter (the address of array), old fp 
+	
+	# the parameter is stored in $sp+8
+	lw $s0, 8($sp)	# load the address of the array
+	lw $t1, 0($a0)	# read the size of the array
+	
+	li $t0, 1	# initialize the starting index
+	li $a0, 0	# initialize the sum to be 0, and $a0 is the return value
+	
+sum_loop:
+	bgt $t0, $t1, exit_loop	# go to branch exit_loop if $t0 > $t1
+	
+	addi $s0, $s0, 4	# read the current item
+	lw $t2, 0($s0)
+	
+	add $a0, $a0, $t2
+	
+	addi $t0, $t0, 1
+	j sum_loop
+	
+exit_loop:
+	lw $ra, 4($sp)	# pop return address
+	addiu $sp, $sp, 12	# 12 = Z = 4 * n + 8, n is the number of parameters
+	
+	lw $fp, 0($sp)	# restore the old fp
+	jr $ra	# return
+	
